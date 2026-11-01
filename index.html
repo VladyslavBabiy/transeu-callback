@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Trans.eu callback</title>
+  <style>
+    :root { --bg: #f6f7f9; --card: #fff; --text: #18181b; --muted: #71717a; --line: #e4e4e7; --accent: #0284c7; --err: #e11d48; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #09090b; --card: #18181b; --text: #f4f4f5; --muted: #a1a1aa; --line: #27272a; --accent: #38bdf8; --err: #fb7185; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px;
+           background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .card { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    p { margin: 8px 0; color: var(--muted); }
+    .code { display: flex; gap: 8px; margin: 16px 0 8px; }
+    input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+            background: var(--bg); color: var(--text); font: 14px ui-monospace, Menlo, monospace; }
+    button { padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+    .err { color: var(--err); }
+    .hidden { display: none; }
+    small { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div id="ok" class="hidden">
+      <h1>Trans.eu: код авторизации получен</h1>
+      <p>Скопируйте код и вставьте его в Freight Bot: Настройки → Trans.eu API → «Код авторизации».</p>
+      <div class="code">
+        <input id="code" readonly>
+        <button id="copy" type="button">Скопировать</button>
+      </div>
+      <small>Код одноразовый и действует недолго. Никому его не пересылайте. Эта страница ничего не отправляет и не сохраняет.</small>
+    </div>
+
+    <div id="fail" class="hidden">
+      <h1 class="err">Trans.eu вернул ошибку</h1>
+      <p id="error"></p>
+    </div>
+
+    <div id="empty" class="hidden">
+      <h1>Trans.eu callback</h1>
+      <p>Служебная страница для подключения Freight Bot к Trans.eu API. Сюда Trans.eu возвращает пользователя после входа.</p>
+    </div>
+  </main>
+
+  <script>
+    const q = new URLSearchParams(location.search);
+    const code = q.get("code");
+    const error = q.get("error");
+    const show = (id) => document.getElementById(id).classList.remove("hidden");
+
+    if (code) {
+      show("ok");
+      const input = document.getElementById("code");
+      input.value = code;
+      input.addEventListener("focus", () => input.select());
+      document.getElementById("copy").addEventListener("click", async (e) => {
+        try { await navigator.clipboard.writeText(code); } catch { input.select(); document.execCommand("copy"); }
+        e.target.textContent = "Скопировано";
+      });
+      // Drop the code from the address bar and browser history.
+      history.replaceState(null, "", location.pathname);
+    } else if (error) {
+      show("fail");
+      document.getElementById("error").textContent = error + (q.get("error_description") ? ": " + q.get("error_description") : "");
+    } else {
+      show("empty");
+    }
+  </script>
+</body>
+</html>
